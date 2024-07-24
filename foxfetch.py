@@ -7,6 +7,9 @@ import os
 import subprocess
 import colorama
 import getpass
+import psutil
+import socket
+import netifaces
 reset = colorama.Style.RESET_ALL
 
 def ascii_returner(number):
@@ -1155,25 +1158,25 @@ def foxfetch():
         else:
             print("CPU:\t", platform.processor())
     elif 'Linux' in platform.platform():
-      try:
-        with open("/proc/cpuinfo", 'r') as f:
-            for line in f:
-                if 'Model' in line:
-                    print('CPU Model:\t' + colorama.Fore.GREEN + line.split(': ')[1].strip() + reset)
-                    break
-      except:
-        print("CPU error!")              
+        try:
+            with open("/proc/cpuinfo", 'r') as f:
+                for line in f:
+                    if 'Model' in line:
+                        print('CPU Model:\t' + colorama.Fore.GREEN + line.split(': ')[1].strip() + reset)
+                        break
+        except:
+            print("CPU error!")              
     if 'Linux' in platform.platform():
         try:
-          with open("/proc/meminfo","r") as f:
-            for line in f:
-              if 'MemTotal' in line:
-                print("Total RAM:\t",colorama.Fore.MAGENTA+line.split(': ')[1].strip() + reset)
-              if 'MemFree' in line:
-                print("Free RAM:\t",colorama.Fore.YELLOW + line.split(': ')[1].strip() + reset)
-                break
+            with open("/proc/meminfo","r") as f:
+                for line in f:
+                    if 'MemTotal' in line:
+                        print("Total RAM:\t",colorama.Fore.MAGENTA+line.split(': ')[1].strip() + reset)
+                    if 'MemFree' in line:
+                        print("Free RAM:\t",colorama.Fore.YELLOW + line.split(': ')[1].strip() + reset)
+                        break
         except Exception as e:
-          print("RAM error:",e)
+            print("RAM error:",e)
         try:
             temperature = subprocess.check_output(['vcgencmd', 'measure_temp'], universal_newlines=True).strip()
             temperature = temperature.split('=')[1]
@@ -1195,6 +1198,35 @@ def foxfetch():
             print("Firmware version:\t", colorama.Fore.GREEN + firmware + reset)
         except Exception as e:
             print("Firmware Version:\t", colorama.Fore.GREEN + platform.uname() + reset)
+
+    # New Feature: Network Information
+    try:
+        hostname = socket.gethostname()
+        ip_address = socket.gethostbyname(hostname)
+        print("IP Address:\t", colorama.Fore.CYAN + ip_address + reset)
+
+        # get mac address, note that this requires the 'netifaces' module
+        # to install it, run 'pip install netifaces'
+        interfaces = netifaces.interfaces()
+        for interface in interfaces:
+            try:
+                mac_address = netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]['addr']
+                break
+            except:
+                pass
+        print("MAC Address:\t", colorama.Fore.CYAN + mac_address + reset)
+    except Exception as e:
+        print("Network Information error:", e)
+
+    # New Feature: Disk Usage
+    try:
+        disk_usage = psutil.disk_usage('/')
+        total_disk = disk_usage.total // (2**30)
+        free_disk = disk_usage.free // (2**30)
+        print("Total Disk Space:\t", colorama.Fore.MAGENTA + str(total_disk) + " GB" + reset)
+        print("Free Disk Space:\t", colorama.Fore.YELLOW + str(free_disk) + " GB" + reset)
+    except Exception as e:
+        print("Disk Usage error:", e)
              
 colorama.init()
 foxfetch()         
